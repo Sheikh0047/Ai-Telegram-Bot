@@ -18,17 +18,17 @@ bot.on(['message', 'photo'], async (ctx) => {
       const photo = ctx.message.photo[ctx.message.photo.length - 1];
       const fileLink = await bot.telegram.getFileLink(photo.file_id);
       imageUrl = fileLink.href;
-      userMessage = ctx.message.caption || 'این تصویر را تحلیل کن.';
+      userMessage = ctx.message.caption || 'این تصویر را خلاصه تحلیل کن.';
     } else if (ctx.message.text) {
       userMessage = ctx.message.text;
     } else {
       return;
     }
 
-    // دستورالعمل جدید برای پاسخ‌های کوتاه، خلاصه و مستقیم
+    // دستورالعمل قاطع برای جلوگیری کامل از پرحرفی
     const systemInstruction = `
-    شما یک دستیار هوشمند، لوکس و باکلاس هستید. 
-    قاعده بسیار مهم: پاسخ‌های شما باید بسیار کوتاه، کاملاً خلاصه، مستقیم و بدون حاشیه یا پرحرفی باشد. اصل مطلب را با لحنی محترمانه و شیک در چند کلمه یا یک خط کوتاه بیان کنید.
+    تو یک دستیار هوشمند هستی. 
+    قانون حیاتی و مطلق: حداکثر طول پاسخ تو باید ۱ الی ۲ جمله کوتاه باشد. به هیچ وجه توضیحات اضافه، مقدمه‌چینی، حاشیه یا متن‌های بلند ننویس. مستقیم، مفید و کوتاه پاسخ بده.
     `;
 
     contentArray.push({ role: "system", content: systemInstruction });
@@ -48,8 +48,8 @@ bot.on(['message', 'photo'], async (ctx) => {
     const completion = await groq.chat.completions.create({
       model: "qwen/qwen3.6-27b",
       messages: contentArray,
-      temperature: 0.5, // دقت بالاتر و خلاقیت کنترل‌شده برای جلوگیری از پرحرفی
-      max_tokens: 300,  // محدود کردن حجم پاسخ برای جلوگیری از طولانی شدن
+      temperature: 0.3, // کاهش خلاقیت برای پایبندی دقیق به کوتاه بودن
+      max_tokens: 150,  // محدودیت شدید حجم پاسخ
     });
 
     const aiReply = completion.choices[0].message.content;
