@@ -1,8 +1,10 @@
 {
-  "name": "telegram-chat-automation",
+  "name": "ai-telegram-bot",
   "version": "1.0.0",
+  "description": "Telegram Bot with Gemini via OpenAI compatibility on Vercel",
+  "main": "api/webhook.js",
   "dependencies": {
     "telegraf": "^4.16.3",
-    "openai": "^4.20.0"
+    "openai": "^4.71.1"
   }
 }
