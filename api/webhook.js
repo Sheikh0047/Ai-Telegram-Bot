@@ -8,31 +8,25 @@ const groq = new OpenAI({
   baseURL: 'https://api.groq.com/openai/v1',
 });
 
-// مدیریت پیام‌های دریافتی (چه در چت ربات و چه از طریق اتوماسیون اکانت)
 bot.on('message', async (ctx) => {
   try {
-    // گرفتن متن پیام کاربر
     const userMessage = ctx.message && ctx.message.text;
     if (!userMessage) return;
-
-    // اگر پیام از طرف خود ربات بود، پردازش نکن
     if (ctx.message.from && ctx.message.from.is_bot) return;
 
-    // ارسال درخواست به هوش مصنوعی گروک
+    // استفاده از مدل جدید و فعال گروک
     const completion = await groq.chat.completions.create({
-      model: "llama3-8b-8192",
+      model: "llama-3.3-70b-versatile",
       messages: [
         { 
           role: "system", 
-          content: "تو دستیار هوشمند و منشی شخصی کاربر در تلگرام هستی. به جای او به پیام‌های دریافتی در چت‌های خصوصی به صورت صمیمی، کوتاه و طبیعی پاسخ بده." 
+          content: "تو دستیار هوشمند و منشی شخصی کاربر در تلگرام هستی. به جای او به پیام‌های دریافتی به صورت صمیمی، کوتاه و طبیعی پاسخ بده." 
         },
         { role: "user", content: userMessage }
       ],
     });
 
     const aiReply = completion.choices[0].message.content;
-
-    // ارسال پاسخ هوش مصنوعی به فرستنده پیام
     await ctx.reply(aiReply);
   } catch (error) {
     console.error('Groq AI Error Details:', error);
