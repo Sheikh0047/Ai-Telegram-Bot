@@ -1,72 +1,61 @@
 const { Telegraf } = require('telegraf');
-const { GoogleGenAI } = require('@google/genai');
+const OpenAI = require('openai');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// راه‌اندازی جمینای با کلید API ورسل
-const ai = new GoogleGenAI({ apiKey: process.env.AI_API_KEY || process.env.GEMINI_API_KEY });
+// استفاده از ساختار سازگار با گوگل روی بستر ورسل
+const ai = new OpenAI({
+  apiKey: process.env.AI_API_KEY || process.env.GEMINI_API_KEY,
+  baseURL: 'https://generativelanguage.googleapis.com/v1beta/openai/'
+});
 
 bot.on(['message', 'photo'], async (ctx) => {
   try {
     let userMessage = '';
-    let imageBuffer = null;
-    let mimeType = 'image/jpeg';
+    let imageUrl = '';
+    let contentArray = [];
 
-    // بررسی نوع پیام (متن یا عکس)
     if (ctx.message.photo && ctx.message.photo.length > 0) {
       const photo = ctx.message.photo[ctx.message.photo.length - 1];
       const fileLink = await bot.telegram.getFileLink(photo.file_id);
-      
-      // دانلود مستقیم عکس برای ارسال به جمینای
-      const response = await fetch(fileLink.href);
-      const arrayBuffer = await response.arrayBuffer();
-      imageBuffer = Buffer.from(arrayBuffer);
-      
-      userMessage = ctx.message.caption || 'این تصویر را خلاصه و مفید تحلیل کن.';
+      imageUrl = fileLink.href;
+      userMessage = ctx.message.caption || 'این تصویر را خلاصه تحلیل کن.';
     } else if (ctx.message.text) {
       userMessage = ctx.message.text;
     } else {
       return;
     }
 
-    // تنظیم دستورالعمل قاطع برای پاسخ‌های کوتاه و مستقیم
-    const systemInstruction = `
-    تو یک دستیار هوشمند، لوکس و بسیار منظم هستی. 
-    قانون حیاتی و مطلق: پاسخ‌های تو باید بسیار کوتاه، کاملاً خلاصه، مستقیم و حداکثر در ۱ الی ۲ جمله باشند. به هیچ وجه توضیحات اضافه، حاشیه یا متن‌های بلند ننویس.
-    `;
+    const systemInstruction = "تو یک دستیار هوشمند و بسیار منظم هستی. پاسخ‌های تو باید بسیار کوتاه، کاملاً خلاصه، مستقیم و حداکثر در ۱ الی ۲ جمله باشند.";
 
-    let contents = [];
+    contentArray.push({ role: "system", content: systemInstruction });
 
-    // اگر عکس وجود داشت، عکس و متن را با هم به جمینای بفرست
-    if (imageBuffer) {
-      contents.push({
-        inlineData: {
-          data: imageBuffer.toString("base64"),
-          mimeType: mimeType
-        }
+    if (imageUrl) {
+      contentArray.push({
+        role: "user",
+        content: [
+          { type: "text", text: userMessage },
+          { type: "image_url", image_url: { "url": imageUrl } },
+        ],
       });
-      contents.push(userMessage);
     } else {
-      contents.push(userMessage);
+      contentArray.push({ role: "user", content: userMessage });
     }
 
-    // استفاده از مدل فوق‌العاده‌ی Gemini 2.5 Flash (سریع، دقیق و هوشمند)
-    const completion = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: contents,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.3,
-        maxOutputTokens: 200,
-      }
+    // استفاده از مدل جمینای با ساختار سازگار
+    const completion = await ai.chat.completions.create({
+      model: "gemini-2.5-flash",
+      messages: contentArray,
+      temperature: 0.3,
+      max_tokens: 200,
     });
 
-    const aiReply = completion.text || 'پاسخی دریافت نشد.';
+    const aiReply = completion.choices[0].message.content;
     await ctx.reply(aiReply);
 
-  } catch (error) {
-    console.error('Gemini AI Error:', error);
-    await ctx.reply(`خطا در ارتباط با جمینای: ${error.message}`);
+  } chats (error) {
+    console.error('Gemini Proxy Error:', error);
+    await ctx.reply(`خطا: ${error.message}`);
   }
 });
 
@@ -76,10 +65,9 @@ module.exports = async (req, res) => {
       await bot.handleUpdate(req.body);
       return res.status(200).send('OK');
     } catch (e) {
-      console.error('Webhook error:', e);
       return res.status(500).send('Error');
     }
   } else {
-    return res.status(200).send('Gemini Bot is active!');
+    return res.status(200).send('Gemini Bot is active on Vercel!');
   }
 };
