@@ -3,9 +3,9 @@ const OpenAI = require('openai');
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
-// اتصال مستقیم با کلید Groq شما
+// تنظیم Groq با استفاده از کتابخانه OpenAI
 const groq = new OpenAI({
-  apiKey: "Gsk_d8UDnYPtyo3GCMmKDNKAWGdyb3FYm0nDTaGS7RjgHIHYHFWwns5Z", 
+  apiKey: process.env.AI_API_KEY,
   baseURL: 'https://api.groq.com/openai/v1',
 });
 
@@ -14,9 +14,9 @@ bot.on('message', async (ctx) => {
     const userMessage = ctx.message.text;
     if (!userMessage) return;
 
-    // ارسال پیام به هوش مصنوعی Groq (مدل Llama 3)
+    // ارسال پیام به هوش مصنوعی Groq
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "llama-3.3-70b-versatile", // مدل فوق‌العاده سریع و هوشمند Groq
       messages: [
         { 
           role: "system", 
