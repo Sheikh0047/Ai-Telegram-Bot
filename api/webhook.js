@@ -18,19 +18,17 @@ bot.on(['message', 'photo'], async (ctx) => {
       const photo = ctx.message.photo[ctx.message.photo.length - 1];
       const fileLink = await bot.telegram.getFileLink(photo.file_id);
       imageUrl = fileLink.href;
-      
-      userMessage = ctx.message.caption || 'این تصویر را با دقت و جزئیات کامل بررسی و تحلیل کن.';
+      userMessage = ctx.message.caption || 'این تصویر را تحلیل کن.';
     } else if (ctx.message.text) {
       userMessage = ctx.message.text;
     } else {
       return;
     }
 
+    // دستورالعمل جدید برای پاسخ‌های کوتاه، خلاصه و مستقیم
     const systemInstruction = `
-    شما یک دستیار هوش مصنوعی شخصی بسیار شیک، باکلاس، و لانچری هستید که برای افراد خاص کار می‌کند.
-    لحن صحبت شما باید رسمی، مودبانه، جذاب، و در عین حال هوشمندانه باشد.
-    از به کار بردن کلمات و جملات عامیانه، ساده، و رباتیک به شدت پرهیز کنید.
-    اگر تصویری برای شما ارسال شد، با استفاده از قابلیت Vision، آن را با جزئیات خیره‌کننده و ادبیاتی فاخر تحلیل کنید.
+    شما یک دستیار هوشمند، لوکس و باکلاس هستید. 
+    قاعده بسیار مهم: پاسخ‌های شما باید بسیار کوتاه، کاملاً خلاصه، مستقیم و بدون حاشیه یا پرحرفی باشد. اصل مطلب را با لحنی محترمانه و شیک در چند کلمه یا یک خط کوتاه بیان کنید.
     `;
 
     contentArray.push({ role: "system", content: systemInstruction });
@@ -40,30 +38,26 @@ bot.on(['message', 'photo'], async (ctx) => {
         role: "user",
         content: [
           { type: "text", text: userMessage },
-          {
-            type: "image_url",
-            image_url: { "url": imageUrl },
-          },
+          { type: "image_url", image_url: { "url": imageUrl } },
         ],
       });
     } else {
       contentArray.push({ role: "user", content: userMessage });
     }
 
-    // استفاده از مدل جدید و قدرتمند Qwen 3.6 با قابلیت بینایی و متن
     const completion = await groq.chat.completions.create({
       model: "qwen/qwen3.6-27b",
       messages: contentArray,
-      temperature: 0.7,
-      max_tokens: 2000,
+      temperature: 0.5, // دقت بالاتر و خلاقیت کنترل‌شده برای جلوگیری از پرحرفی
+      max_tokens: 300,  // محدود کردن حجم پاسخ برای جلوگیری از طولانی شدن
     });
 
     const aiReply = completion.choices[0].message.content;
     await ctx.reply(aiReply);
 
   } catch (error) {
-    console.error('Groq AI Advanced Error:', error);
-    await ctx.reply(`خطا در پردازش هوش مصنوعی: ${error.message}`);
+    console.error('Groq AI Error:', error);
+    await ctx.reply(`خطا: ${error.message}`);
   }
 });
 
@@ -73,10 +67,9 @@ module.exports = async (req, res) => {
       await bot.handleUpdate(req.body);
       return res.status(200).send('OK');
     } catch (e) {
-      console.error('Webhook error:', e);
       return res.status(500).send('Error');
     }
   } else {
-    return res.status(200).send('Luxury AI Assistant Bot is active!');
+    return res.status(200).send('Bot is active!');
   }
 };
